@@ -201,7 +201,12 @@ function Deferred(canceller){
     if (!dontThrow) {
       enqueue(function () {
         if (!handled) {
-          throw error;
+          if (typeof(error) === 'string') {
+            throw new Error(error);
+          }
+          else {
+            throw error;
+          }
         }
       });
     }
