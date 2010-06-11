@@ -70,6 +70,13 @@ Promise.prototype.then = function(resolvedCallback, errorCallback, progressCallb
 };
 
 /**
+ * Promise implementations must provide a "thenAll" function.
+ */
+Promise.prototype.thenAll = function(resolvedCallback, errorCallback, progressCallback){
+  throw new TypeError("The Promise base class is abstract, this function must be implemented by the Promise implementation");
+};
+
+/**
  * If an implementation of a promise supports a concurrency model that allows
  * execution to block until the promise is resolved, the wait function may be 
  * added. 
@@ -220,6 +227,20 @@ function Deferred(canceller){
     }
     return returnDeferred.promise;
   };
+  this.thenAll = promise.thenAll = function(resolvedCallback, errorCallback, progressCallback){
+    return this.then(
+      resolvedCallback ?
+        function () { return resolvedCallback.apply(null, arguments[0]); } :
+        resolvedCallback,
+      errorCallback ?
+        function () { return errorCallback.apply(null, arguments[0]); } :
+        errorCallback,
+      progressCallback ?
+        function () { return progressCallback.apply(null, arguments[0]); } :
+        progressCallback
+    );
+  };
+
   var timeout;
   if(typeof setTimeout !== "undefined") {
     this.timeout = function (ms) {
@@ -308,6 +329,30 @@ exports.when = function(value, resolvedCallback, rejectCallback, progressCallbac
     return exports.whenPromise(value, resolvedCallback, rejectCallback, progressCallback);
   }
   return resolvedCallback(value);
+};
+
+/**
+ * Registers an observer on a promise with a resolved value that is an array
+ * (e.g. a promise returned from promise.all).
+ * @param value   promise or value to observe
+ * @param resolvedCallback function to be called with the resolved value
+ * @param rejectCallback  function to be called with the rejection reason
+ * @param progressCallback  function to be called when progress is made
+ * @return promise for the return value from the invoked callback or the value if it
+ * is a non-promise value
+ */exports.whenAll = function(value, resolvedCallback, rejectCallback, progressCallback){
+  return exports.when(
+    value,
+    resolvedCallback ?
+      function () { return resolvedCallback.apply(null, arguments[0]); } :
+      resolvedCallback,
+    rejectCallback ?
+      function () { return rejectCallback.apply(null, arguments[0]); } :
+      rejectCallback,
+    progressCallback ?
+      function () { return progressCallback.apply(null, arguments[0]); } :
+      progressCallback
+  );
 };
 
 /**
