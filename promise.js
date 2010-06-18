@@ -444,7 +444,21 @@ exports.wait = function(target){
   }
 };
 
+// adapted from https://developer.mozilla.org/En/Core_JavaScript_1.5_Reference/Objects/Array/ForEach
 
+function forEach (fun) {
+  var len = this.length >>> 0;
+  if (typeof fun !== "function") {
+    throw new TypeError();
+  }
+
+  var thisp = arguments[1];
+  for (var i = 0; i < len; i++) {
+    if (i in this) {
+      fun.call(thisp, this[i], i, this);
+    }
+  }
+}
 
 /**
  * Takes an array of promises and returns a promise that is fulfilled once all
@@ -461,7 +475,7 @@ exports.all = function(array){
   var results = [];
   if (length === 0) deferred.resolve(results);
   else {
-    array.forEach(function(promise, index){
+    forEach.call(array, function(promise, index){
       exports.when(promise, each, each);
       function each(value){
         results[index] = value;
@@ -487,7 +501,7 @@ exports.first = function(array){
     array = Array.prototype.slice.call(arguments);
   }
   var fulfilled;
-  array.forEach(function(promise, index){
+  forEach.call(array, function(promise, index){
     exports.when(promise, function(value){
       if (!fulfilled) {
         fulfilled = true;
